@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "Mindspace needs access to your calendar to sync your reminders.",
+        "NSRemindersUsageDescription": "Mindspace needs access to your reminders to keep you organized.",
+        "NSMicrophoneUsageDescription": "Mindspace needs access to your microphone for voice notes and transcription."
+      }
     },
     "android": {
       "adaptiveIcon": {
