@@ -1,50 +1,190 @@
-# Welcome to your Expo app 👋
+# 🧠 Gotcha - AI-Powered Smart Notes
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Notion meets Grammarly for Actions**
 
-## Get started
+An intelligent note-taking app that automatically detects actionable items (reminders, tasks, meetings) as you write and helps you execute them with 1-tap confirmation.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## ✨ Features
 
-2. Start the app
+### 🎯 Core Functionality
+- **Smart Detection**: AI analyzes your notes in real-time to find:
+  - 📞 **Calls** - "Call Sarah tomorrow at 2pm"
+  - 📅 **Meetings** - "Standup next Monday 10am"
+  - ✅ **Tasks** - "Finish report by Friday"
+  - ⏰ **Deadlines** - "Submit proposal due next week"
 
-   ```bash
-   npx expo start
-   ```
+- **Inline Suggestions**: Floating action cards appear as you type (like Grammarly)
+- **1-Tap Execution**: Confirm actions instantly without leaving your note
+- **100% Local-First**: All notes stored on-device with AsyncStorage
+- **Zero Backend**: No servers, no signup, complete privacy
 
-In the output, you'll find options to open the app in a
+### 🎨 Premium UI/UX
+- **Glassmorphic Design**: Real native blur effects (expo-blur)
+- **Haptic Feedback**: Feel every interaction
+- **Dark Mode**: "Aurora" gradient with deep blacks
+- **Smooth Animations**: Spring physics for organic feel
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🏗️ Technical Architecture
 
-## Get a fresh project
+### Stack
+- **Framework**: React Native (Expo)
+- **NLP Engine**: `chrono-node` (on-device temporal parsing)
+- **Storage**: AsyncStorage (local-first)
+- **Notifications**: expo-notifications (native OS)
+- **UI**: Custom glassmorphism components
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+### File Structure
+```
+├── App.js                          # Main orchestrator
+├── src/
+│   ├── components/
+│   │   ├── NoteEditor.js          # Rich text with AI detection
+│   │   ├── NotesLibrary.js        # All notes grid
+│   │   └── ModernUI.js            # Glass components, overlays
+│   ├── services/
+│   │   ├── NoteService.js         # AsyncStorage CRUD
+│   │   └── NotificationService.js # Native reminders
+│   └── utils/
+│       └── nlp.js                  # Action detection engine
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🚀 Getting Started
 
-To learn more about developing your project with Expo, look at the following resources:
+### Prerequisites
+- Node.js 16+
+- Expo CLI (`npm install -g expo-cli`)
+- iOS Simulator (Xcode) or Android Studio
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Installation
+```bash
+cd "/Users/aravindg/Desktop/reminder app"
+npm install
+npx expo start
+```
 
-## Join the community
+### Running
+- **iOS**: Press `i` (requires Xcode)
+- **Android**: Press `a` (requires Android Studio)
+- **Physical Device**: Scan QR with Expo Go app
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🧪 How It Works
+
+### Example Flow
+1. **User writes**: 
+   ```
+   Monday meeting notes:
+   - Call Mike about Q1 budget tomorrow at 2pm
+   - Review design mockups
+   ```
+
+2. **AI detects**:
+   - Action card appears: **CALL** | "Call Mike about Q1 budget" | Tomorrow, 2:00 PM
+
+3. **User confirms**: Taps ✓ → Native reminder scheduled
+
+4. **Result**: User gets notification tomorrow at 2pm
+
+---
+
+## 🎯 Why This is Different
+
+| Feature | Gotcha | Notion | Apple Notes | Siri |
+|---------|--------|--------|-------------|------|
+| Auto-detect actions from notes | ✅ | ❌ | ❌ | ❌ |
+| Works offline | ✅ | ❌ | ✅ | ❌ |
+| No signup required | ✅ | ❌ | ✅ | ✅ |
+| Inline AI suggestions | ✅ | ⚠️ (basic) | ❌ | ❌ |
+| Privacy-first | ✅ | ❌ | ✅ | ⚠️ |
+
+---
+
+## 🔮 Future Roadmap
+
+### Phase 2
+- [ ] Voice notes → Action detection
+- [ ] PDF/Image import with OCR
+- [ ] Recurring tasks ("Every Monday...")
+- [ ] Share Extension (iOS)
+- [ ] Android system-wide overlay popup
+
+### Phase 3
+- [ ] Collaboration (P2P, no servers)
+- [ ] Templates library
+- [ ] Export to Calendar apps
+- [ ] Siri Shortcuts integration
+
+---
+
+## 📖 Development Notes
+
+### NLP Detection Logic
+The `analyzeText()` function uses:
+1. **Chrono.js**: Temporal parsing ("tomorrow", "next Friday")
+2. **Keyword Patterns**: Intent classification (call, meeting, task)
+3. **Confidence Scoring**: High/Medium/Low based on context
+
+### Storage Schema
+```javascript
+{
+  id: "timestamp-random",
+  title: "Meeting Notes",
+  content: "Full markdown text...",
+  createdAt: "2026-01-21T18:00:00Z",
+  updatedAt: "2026-01-21T19:00:00Z",
+  detectedActions: [
+    {
+      type: "call",
+      title: "Call Sarah",
+      date: Date,
+      confidence: "high"
+    }
+  ]
+}
+```
+
+---
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+**Problem**: "Xcode must be fully installed"
+- **Solution**: Install Xcode from App Store, then run:
+  ```bash
+  sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+  ```
+
+**Problem**: Notifications not appearing
+- **Solution**: Grant permissions in iOS Settings > Gotcha > Notifications
+
+**Problem**: Blur not working on Android
+- **Solution**: Update `expo-blur` or test on physical device (not all emulators support blur)
+
+---
+
+## 📄 License
+
+MIT License - Feel free to use this for your research or commercial projects.
+
+---
+
+## 🙏 Credits
+
+Built with ❤️ using:
+- [Expo](https://expo.dev)
+- [Chrono](https://github.com/wanasit/chrono)
+- [Lucide Icons](https://lucide.dev)
+
+---
+
+**Made by:** Gotcha AI Team
+**Version:** 1.0.0 (MVP)
+**Date:** January 2026
