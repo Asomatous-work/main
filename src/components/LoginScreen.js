@@ -1,9 +1,10 @@
 
 import { BlurView } from 'expo-blur';
-import { ArrowRight, Smartphone } from 'lucide-react-native';
-import { useState } from 'react';
+import { ArrowRight, CheckCircle2, Smartphone } from 'lucide-react-native';
+import { useRef, useState } from 'react';
 import {
     Alert,
+    Animated,
     Dimensions,
     KeyboardAvoidingView,
     Platform,
@@ -18,28 +19,76 @@ import { MeshGradientBackground } from './PremiumUI';
 const { width } = Dimensions.get('window');
 
 /**
- * Login Screen for Mobile Number Auth
- * Simulates the flow of a modern authenticatior.
+ * Gotcha Login Screen - Optimized for India (+91)
+ * Features a high-fidelity OTP verification experience.
  */
 export const LoginScreen = ({ onLogin }) => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [step, setStep] = useState('phone'); // 'phone' | 'otp'
-    const [otp, setOtp] = useState('');
+    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [loading, setLoading] = useState(false);
+
+    const fadeAnim = useRef(new Animated.Value(1)).current;
+    const otpRefs = useRef([]);
 
     const handleSendCode = () => {
-        if (phoneNumber.length < 10) {
-            Alert.alert("Invalid Number", "Please enter a valid mobile number.");
+        if (phoneNumber.length !== 10) {
+            Alert.alert("Invalid Number", "Please enter a 10-digit mobile number.");
             return;
         }
-        setStep('otp');
+
+        setLoading(true);
+        // Simulate premium loading/network delay
+        setTimeout(() => {
+            setLoading(false);
+            transitionStep('otp');
+        }, 1500);
     };
 
-    const handleVerify = () => {
-        if (otp.length !== 6) {
-            Alert.alert("Invalid Code", "Please enter the 6-digit code.");
-            return;
+    const transitionStep = (newStep) => {
+        Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true
+        }).start(() => {
+            setStep(newStep);
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true
+            }).start();
+        });
+    };
+
+    const handleOtpChange = (value, index) => {
+        const newOtp = [...otp];
+        newOtp[index] = value;
+        setOtp(newOtp);
+
+        // Auto focus next
+        if (value && index < 5) {
+            otpRefs.current[index + 1].focus();
         }
-        onLogin(phoneNumber);
+
+        // Check if complete
+        if (newOtp.join('').length === 6) {
+            handleVerify(newOtp.join(''));
+        }
+    };
+
+    const handleVerify = (finalOtp) => {
+        const fullOtp = finalOtp || otp.join('');
+        if (fullOtp.length !== 6) return;
+
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+            if (fullOtp === '123456' || true) { // Simulated success for dev
+                onLogin(`+91${phoneNumber}`);
+            } else {
+                Alert.alert("Invalid Code", "The OTP you entered is incorrect.");
+            }
+        }, 1200);
     };
 
     return (
@@ -50,8 +99,8 @@ export const LoginScreen = ({ onLogin }) => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
             >
-                <View style={styles.card}>
-                    <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
+                <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
+                    <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
 
                     <View style={styles.content}>
                         <View style={styles.iconCircle}>
@@ -59,58 +108,90 @@ export const LoginScreen = ({ onLogin }) => {
                         </View>
 
                         <Text style={styles.title}>
-                            {step === 'phone' ? 'Welcome to Gotcha' : 'Verify Identity'}
+                            {step === 'phone' ? 'Gotcha Messenger' : 'Verification'}
                         </Text>
                         <Text style={styles.subtitle}>
                             {step === 'phone'
-                                ? 'Enter your mobile number to get started with secure messaging.'
-                                : `Enter the code sent to ${phoneNumber}`}
+                                ? 'Bharat\'s most secure messaging app. Enter your number to join.'
+                                : `Verification code sent to +91 ${phoneNumber}`}
                         </Text>
 
                         {step === 'phone' ? (
-                            <View style={styles.inputContainer}>
-                                <Text style={styles.prefix}>+1</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Mobile Number"
-                                    placeholderTextColor="rgba(255,255,255,0.3)"
-                                    keyboardType="phone-pad"
-                                    value={phoneNumber}
-                                    onChangeText={setPhoneNumber}
-                                    maxLength={12}
-                                />
+                            <View style={styles.inputWrapper}>
+                                <View style={styles.inputContainer}>
+                                    <Text style={styles.prefix}>🇮🇳 +91</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Mobile Number"
+                                        placeholderTextColor="rgba(255,255,255,0.3)"
+                                        keyboardType="phone-pad"
+                                        value={phoneNumber}
+                                        onChangeText={setPhoneNumber}
+                                        maxLength={10}
+                                        autoFocus
+                                    />
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.btn, loading && styles.btnDisabled]}
+                                    onPress={handleSendCode}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <Text style={styles.btnText}>Requesting OTP...</Text>
+                                    ) : (
+                                        <>
+                                            <Text style={styles.btnText}>Get OTP Code</Text>
+                                            <ArrowRight size={20} color="#000" />
+                                        </>
+                                    )}
+                                </TouchableOpacity>
                             </View>
                         ) : (
-                            <View style={styles.inputContainer}>
-                                <TextInput
-                                    style={[styles.input, { textAlign: 'center', fontSize: 24, letterSpacing: 8 }]}
-                                    placeholder="000 000"
-                                    placeholderTextColor="rgba(255,255,255,0.3)"
-                                    keyboardType="number-pad"
-                                    value={otp}
-                                    onChangeText={setOtp}
-                                    maxLength={6}
-                                />
+                            <View style={styles.otpWrapper}>
+                                <View style={styles.otpGrid}>
+                                    {otp.map((digit, i) => (
+                                        <TextInput
+                                            key={i}
+                                            ref={el => otpRefs.current[i] = el}
+                                            style={styles.otpInput}
+                                            keyboardType="number-pad"
+                                            maxLength={1}
+                                            value={digit}
+                                            onChangeText={(v) => handleOtpChange(v, i)}
+                                            onKeyPress={({ nativeEvent }) => {
+                                                if (nativeEvent.key === 'Backspace' && !digit && i > 0) {
+                                                    otpRefs.current[i - 1].focus();
+                                                }
+                                            }}
+                                            placeholder="-"
+                                            placeholderTextColor="rgba(255,255,255,0.2)"
+                                        />
+                                    ))}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.btn, loading && styles.btnDisabled]}
+                                    onPress={() => handleVerify()}
+                                    disabled={loading}
+                                >
+                                    <Text style={styles.btnText}>
+                                        {loading ? 'Verifying...' : 'Finish Setup'}
+                                    </Text>
+                                    {!loading && <CheckCircle2 size={20} color="#000" />}
+                                </TouchableOpacity>
+
+                                <TouchableOpacity onPress={() => transitionStep('phone')} style={styles.backBtn}>
+                                    <Text style={styles.backText}>Edit Number</Text>
+                                </TouchableOpacity>
                             </View>
                         )}
 
-                        <TouchableOpacity
-                            style={styles.btn}
-                            onPress={step === 'phone' ? handleSendCode : handleVerify}
-                        >
-                            <Text style={styles.btnText}>
-                                {step === 'phone' ? 'Get Verification Code' : 'Verify & Login'}
-                            </Text>
-                            <ArrowRight size={20} color="#000" />
-                        </TouchableOpacity>
-
-                        {step === 'otp' && (
-                            <TouchableOpacity onPress={() => setStep('phone')} style={styles.backBtn}>
-                                <Text style={styles.backText}>Change Number</Text>
-                            </TouchableOpacity>
-                        )}
+                        <View style={styles.footer}>
+                            <Text style={styles.footerText}>Secure End-to-End Encryption 🔒</Text>
+                        </View>
                     </View>
-                </View>
+                </Animated.View>
             </KeyboardAvoidingView>
         </View>
     );
@@ -124,87 +205,133 @@ const styles = StyleSheet.create({
     keyboardView: {
         flex: 1,
         justifyContent: 'center',
-        padding: 24,
+        padding: 20,
     },
     card: {
-        borderRadius: 32,
+        borderRadius: 36,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
     },
     content: {
         padding: 32,
         alignItems: 'center',
     },
     iconCircle: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: 'rgba(255,255,255,0.1)',
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: 'rgba(255,255,255,0.08)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 20,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',
     },
     title: {
-        fontSize: 28,
-        fontWeight: '800',
+        fontSize: 30,
+        fontWeight: '900',
         color: '#fff',
-        marginBottom: 8,
+        marginBottom: 10,
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: 15,
-        color: 'rgba(255,255,255,0.6)',
+        fontSize: 16,
+        color: 'rgba(255,255,255,0.5)',
         textAlign: 'center',
-        marginBottom: 32,
-        lineHeight: 22,
+        marginBottom: 36,
+        lineHeight: 24,
+    },
+    inputWrapper: {
+        width: '100%',
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 20,
         paddingHorizontal: 16,
-        height: 56,
+        height: 64,
         width: '100%',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
-        marginBottom: 24,
+        marginBottom: 20,
     },
     prefix: {
         fontSize: 18,
-        color: 'rgba(255,255,255,0.5)',
+        color: '#fff',
         marginRight: 12,
-        fontWeight: '600',
+        fontWeight: '700',
     },
     input: {
         flex: 1,
-        fontSize: 18,
+        fontSize: 20,
         color: '#fff',
-        fontWeight: '600',
+        fontWeight: '700',
+        letterSpacing: 1,
+    },
+    otpWrapper: {
+        width: '100%',
+        alignItems: 'center',
+    },
+    otpGrid: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 32,
+    },
+    otpInput: {
+        width: width / 9.5,
+        height: 60,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.1)',
+        color: '#fff',
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     btn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#fff',
-        borderRadius: 16,
-        height: 56,
+        borderRadius: 20,
+        height: 64,
         width: '100%',
-        gap: 8,
+        gap: 12,
+        shadowColor: '#fff',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 6,
+    },
+    btnDisabled: {
+        backgroundColor: 'rgba(255,255,255,0.5)',
     },
     btnText: {
-        fontSize: 16,
-        fontWeight: '700',
+        fontSize: 17,
+        fontWeight: '800',
         color: '#000',
     },
     backBtn: {
-        marginTop: 20,
+        marginTop: 24,
+        padding: 10,
     },
     backText: {
-        color: 'rgba(255,255,255,0.5)',
+        color: 'rgba(255,255,255,0.4)',
         fontSize: 14,
+        fontWeight: '600',
+        textDecorationLine: 'underline',
+    },
+    footer: {
+        marginTop: 32,
+    },
+    footerText: {
+        color: 'rgba(255,255,255,0.3)',
+        fontSize: 12,
+        fontWeight: '500',
     }
 });

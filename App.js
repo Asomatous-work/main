@@ -7,6 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { GotchaChatList } from './src/components/GotchaChatList';
 import { GotchaChatRoom } from './src/components/GotchaChatRoom';
+import { LoginScreen } from './src/components/LoginScreen';
 import { ExecutionHUD } from './src/components/ModernUI';
 import { MeshGradientBackground } from './src/components/PremiumUI';
 import { SettingsSheet } from './src/components/SettingsSheet';

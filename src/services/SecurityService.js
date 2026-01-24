@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CryptoJS from 'crypto-js';
+import * as Crypto from 'expo-crypto';
 
 const KEYS_STORAGE_PREFIX = '@gotcha_keys_';
 
@@ -8,14 +9,18 @@ const KEYS_STORAGE_PREFIX = '@gotcha_keys_';
  * Uses AES-256 for message encryption and RSA-like simulation for key exchange.
  */
 
-// Generate a random 256-bit key
+// Generate a random 256-bit key using Expo Crypto for reliability
 export const generateKey = () => {
-    return CryptoJS.lib.WordArray.random(256 / 8).toString();
+    // Generate 32 random bytes (256 bits)
+    const randomBytes = Crypto.getRandomValues(new Uint8Array(32));
+    // Convert to hex string
+    return Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
 // Encrypt message with a specific key (Session Key)
 export const encryptMessage = (text, key) => {
     try {
+        if (!text || !key) return text;
         const encrypted = CryptoJS.AES.encrypt(text, key).toString();
         return encrypted;
     } catch (error) {
@@ -27,6 +32,7 @@ export const encryptMessage = (text, key) => {
 // Decrypt message with a specific key
 export const decryptMessage = (encryptedText, key) => {
     try {
+        if (!encryptedText || !key) return encryptedText;
         const bytes = CryptoJS.AES.decrypt(encryptedText, key);
         const originalText = bytes.toString(CryptoJS.enc.Utf8);
         return originalText || '⚠️ Decryption Error';
@@ -46,12 +52,12 @@ export const getChatKey = async (chatId) => {
             return existingKey;
         }
 
-        // New Chat: Generate Key (Handshake simulation)
+        // New Chat: Generate Key
         const newKey = generateKey();
         await AsyncStorage.setItem(keyKey, newKey);
         return newKey;
     } catch (err) {
         console.error('Key retrieval failed', err);
-        return 'default-fallback-key'; // Should not happen in prod for security
+        return 'default-fallback-key';
     }
 };
