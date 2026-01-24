@@ -1,5 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { decryptMessage, encryptMessage, getChatKey } from './SecurityService';
 
-const MOCK_CHATS = [
+const CHATS_STORAGE_KEY = '@gotcha_chats_v1';
+
+// Initial Seed Data (Only encrypted on first run)
+const SEED_CHATS = [
     {
         id: '2',
         name: 'Design Team',
@@ -39,17 +44,85 @@ const MOCK_CHATS = [
 ];
 
 export const getChats = async () => {
-    // Simulate API delay
-    return new Promise(resolve => setTimeout(() => resolve(MOCK_CHATS), 500));
+    try {
+        const storedChats = await AsyncStorage.getItem(CHATS_STORAGE_KEY);
+        let chats = [];
+
+        if (!storedChats) {
+            // First Launch: Seed DB and Encrypt everything
+            chats = await Promise.all(SEED_CHATS.map(async (chat) => {
+                const key = await getChatKey(chat.id);
+                // Encrypt initial messages
+                const encryptedMessages = chat.messages.map(m => ({
+                    ...m,
+                    text: encryptMessage(m.text, key),
+                    isEncrypted: true
+                }));
+                return { ...chat, messages: encryptedMessages };
+            }));
+            await AsyncStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(chats));
+        } else {
+            chats = JSON.parse(storedChats);
+        }
+
+        // Decrypt for UI display
+        return await Promise.all(chats.map(async (chat) => {
+            const key = await getChatKey(chat.id);
+            const decryptedMessages = chat.messages.map(m => ({
+                ...m,
+                originalText: m.text, // Store encrypted version if needed
+                text: m.isEncrypted ? decryptMessage(m.text, key) : m.text // Handle legacy/plain
+            }));
+            return {
+                ...chat,
+                messages: decryptedMessages,
+                // Decrypt last message preview too if needed
+                // lastMessage: chat.lastMessage
+            };
+        }));
+
+    } catch (err) {
+        console.error('Failed to load chats', err);
+        return [];
+    }
 };
 
-export const sendMessage = (chatId, text, type = 'text') => {
-    console.log(`Sending to ${chatId}: ${text} (${type})`);
-    return {
-        id: Math.random().toString(36).substr(2, 9),
-        text,
-        sender: 'me',
-        time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-        type
-    };
+export const sendMessage = async (chatId, text, type = 'text') => {
+    try {
+        const key = await getChatKey(chatId);
+        const encryptedText = encryptMessage(text, key);
+
+        const newMsg = {
+            id: Math.random().toString(36).substr(2, 9),
+            text: encryptedText, // Save encrypted
+            sender: 'me',
+            time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+            type,
+            isEncrypted: true
+        };
+
+        // Update Storage
+        const storedChats = await AsyncStorage.getItem(CHATS_STORAGE_KEY);
+        if (storedChats) {
+            let chats = JSON.parse(storedChats);
+            chats = chats.map(c => {
+                if (c.id === chatId) {
+                    return {
+                        ...c,
+                        lastMessage: type === 'audio' ? 'Voice Message' : text, // Preview usually plaintext or specific placeholder
+                        time: 'Just now',
+                        messages: [...c.messages, newMsg]
+                    };
+                }
+                return c;
+            });
+            await AsyncStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(chats));
+        }
+
+        // Return decrypted version for UI immediate update
+        return { ...newMsg, text: text };
+    } catch (err) {
+        console.error('Failed to send message', err);
+        return null;
+    }
 };

@@ -5,6 +5,7 @@ import {
     CheckCheck,
     ChevronLeft,
     Info,
+    Lock,
     MoreHorizontal,
     Plus,
     Send,
@@ -98,6 +99,13 @@ export const GotchaChatRoom = ({
                 showsVerticalScrollIndicator={false}
                 onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
             >
+                <View style={styles.encryptionBanner}>
+                    <Lock size={12} color="rgba(255,255,255,0.4)" />
+                    <Text style={styles.encryptionText}>
+                        Messages are end-to-end encrypted. No one outside of this chat, not even Gotcha, can read or listen to them.
+                    </Text>
+                </View>
+
                 {messages.map((msg, index) => (
                     <Animated.View
                         key={msg.id}
@@ -367,5 +375,24 @@ const styles = StyleSheet.create({
     },
     textDark: {
         color: '#111827',
+    },
+    encryptionBanner: {
+        backgroundColor: 'rgba(255,193,7,0.1)',
+        padding: 10,
+        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+        marginHorizontal: 20,
+        gap: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,193,7,0.2)',
+    },
+    encryptionText: {
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.6)',
+        textAlign: 'center',
+        flex: 1,
     }
 });
