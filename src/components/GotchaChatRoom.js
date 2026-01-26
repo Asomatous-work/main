@@ -2,9 +2,9 @@
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import {
+    Check,
     CheckCheck,
     ChevronLeft,
-    Info,
     Lock,
     MoreHorizontal,
     Plus,
@@ -14,6 +14,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import {
     Dimensions,
+    Image,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -23,10 +24,10 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import Animated, { FadeIn, SlideInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, Layout, SlideInRight } from 'react-native-reanimated';
 import { GlowOrb } from './PremiumUI';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export const GotchaChatRoom = ({
     chat,
@@ -44,46 +45,78 @@ export const GotchaChatRoom = ({
     useEffect(() => {
         setMessages(chat?.messages || []);
         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-    }, [chat?.id]);
+    }, [chat?.id, chat?.messages]);
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!inputText.trim()) return;
 
+        const newMsgId = Date.now().toString();
         const newMsg = {
-            id: Date.now().toString(),
+            id: newMsgId,
             text: inputText,
             sender: 'me',
-            time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+            time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+            status: 'sent' // sent | delivered | read
         };
 
-        setMessages([...messages, newMsg]);
+        const updatedMessages = [...messages, newMsg];
+        setMessages(updatedMessages);
         setInputText('');
-        onSendMessage(chat.id, inputText);
 
+        onSendMessage(chat.id, inputText);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+
+        // Simulate real-time status updates - UX from advanced apps
+        setTimeout(() => {
+            setMessages(prev => prev.map(m => m.id === newMsgId ? { ...m, status: 'delivered' } : m));
+        }, 1500);
+
+        setTimeout(() => {
+            setMessages(prev => prev.map(m => m.id === newMsgId ? { ...m, status: 'read' } : m));
+        }, 3000);
+    };
+
+    const renderStatusIcon = (status) => {
+        switch (status) {
+            case 'sent':
+                return <Check size={14} color="rgba(255,255,255,0.4)" />;
+            case 'delivered':
+                return <CheckCheck size={14} color="rgba(255,255,255,0.4)" />;
+            case 'read':
+                return <CheckCheck size={14} color="#6366F1" />;
+            default:
+                return null;
+        }
     };
 
     return (
         <View style={[styles.container, !darkMode && styles.lightBg]}>
             {/* Header */}
-            <BlurView intensity={80} tint={darkMode ? "dark" : "light"} style={styles.header}>
+            <BlurView intensity={90} tint={darkMode ? "dark" : "light"} style={styles.header}>
                 <View style={styles.headerContent}>
                     <TouchableOpacity onPress={onBack} style={styles.backBtn}>
                         <ChevronLeft size={28} color={darkMode ? "#fff" : "#000"} />
                     </TouchableOpacity>
 
                     <View style={styles.userInfo}>
-                        <Text style={[styles.userName, !darkMode && styles.textDark]}>{chat.name}</Text>
+                        <View style={styles.nameRow}>
+                            <Text style={[styles.userName, !darkMode && styles.textDark]}>{chat.name}</Text>
+                        </View>
                         <View style={styles.statusRow}>
                             <View style={styles.onlineDot} />
-                            <Text style={styles.statusText}>Active now</Text>
+                            <Text style={styles.statusText}>online</Text>
                         </View>
                     </View>
 
                     <View style={styles.headerActions}>
-                        <TouchableOpacity style={styles.actionBtn}>
-                            <Info size={22} color={darkMode ? "#fff" : "#000"} />
+                        <TouchableOpacity style={styles.avatarBtn}>
+                            {chat.avatar ? (
+                                <Image source={{ uri: chat.avatar }} style={styles.miniAvatar} />
+                            ) : (
+                                <View style={[styles.miniAvatar, { backgroundColor: '#6366F1' }]}>
+                                    <Text style={styles.miniAvatarText}>{(chat.name || '?')[0]}</Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.actionBtn}>
                             <MoreHorizontal size={22} color={darkMode ? "#fff" : "#000"} />
@@ -99,16 +132,17 @@ export const GotchaChatRoom = ({
                 showsVerticalScrollIndicator={false}
                 onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
             >
-                <View style={styles.encryptionBanner}>
-                    <Lock size={12} color="rgba(255,255,255,0.4)" />
-                    <Text style={styles.encryptionText}>
-                        Messages are end-to-end encrypted. No one outside of this chat, not even Gotcha, can read or listen to them.
+                <View style={[styles.encryptionBanner, !darkMode && styles.encryptionBannerLight]}>
+                    <Lock size={12} color={darkMode ? "rgba(255,193,7,0.6)" : "rgba(245,158,11,0.6)"} />
+                    <Text style={[styles.encryptionText, !darkMode && styles.textDarkDim]}>
+                        Messages are end-to-end encrypted. No one outside of this chat can read or listen to them.
                     </Text>
                 </View>
 
                 {messages.map((msg, index) => (
                     <Animated.View
                         key={msg.id}
+                        layout={Layout}
                         entering={index === messages.length - 1 ? SlideInRight : FadeIn}
                         style={[
                             styles.messageWrapper,
@@ -125,13 +159,15 @@ export const GotchaChatRoom = ({
                             ]}>
                                 {msg.text}
                             </Text>
-                            {msg.sender === 'me' && (
-                                <View style={styles.statusCheck}>
-                                    <CheckCheck size={14} color="rgba(255,255,255,0.7)" />
-                                </View>
-                            )}
+                            <View style={styles.msgDetails}>
+                                <Text style={[styles.timeText, msg.sender === 'me' && styles.myTimeText]}>{msg.time}</Text>
+                                {msg.sender === 'me' && (
+                                    <View style={styles.statusCheck}>
+                                        {renderStatusIcon(msg.status || 'read')}
+                                    </View>
+                                )}
+                            </View>
                         </View>
-                        <Text style={styles.timeText}>{msg.time}</Text>
                     </Animated.View>
                 ))}
             </ScrollView>
@@ -141,7 +177,7 @@ export const GotchaChatRoom = ({
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                <View style={[styles.inputWrapper, !darkMode && styles.inputWrapperLight]}>
+                <BlurView intensity={darkMode ? 40 : 80} tint={darkMode ? "dark" : "light"} style={styles.inputWrapper}>
                     <View style={[styles.inputFieldContainer, !darkMode && styles.inputFieldLight]}>
                         <TouchableOpacity style={styles.inputAction}>
                             <Plus size={22} color="#6366F1" />
@@ -177,7 +213,7 @@ export const GotchaChatRoom = ({
                             </View>
                         )}
                     </View>
-                </View>
+                </BlurView>
             </KeyboardAvoidingView>
         </View>
     );
@@ -189,13 +225,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#000',
     },
     lightBg: {
-        backgroundColor: '#F2F2F7',
+        backgroundColor: '#F8F9FA',
     },
     header: {
-        paddingTop: Platform.OS === 'ios' ? 50 : 20,
-        paddingBottom: 15,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(255,255,255,0.1)',
+        paddingTop: Platform.OS === 'ios' ? 54 : 20,
+        paddingBottom: 12,
         zIndex: 10,
     },
     headerContent: {
@@ -207,11 +241,14 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         justifyContent: 'center',
-        alignItems: 'flex-start',
     },
     userInfo: {
         flex: 1,
-        marginLeft: 8,
+        marginLeft: 4,
+    },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     userName: {
         fontSize: 18,
@@ -221,26 +258,45 @@ const styles = StyleSheet.create({
     statusRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 2,
+        marginTop: 1,
     },
     onlineDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
         backgroundColor: '#10B981',
-        marginRight: 6,
+        marginRight: 5,
     },
     statusText: {
         fontSize: 12,
-        color: 'rgba(255,255,255,0.5)',
+        color: '#10B981',
+        fontWeight: '600',
+        textTransform: 'lowercase',
     },
     headerActions: {
         flexDirection: 'row',
+        alignItems: 'center',
         gap: 8,
     },
+    avatarBtn: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    miniAvatar: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    miniAvatarText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
     actionBtn: {
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -248,32 +304,53 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     messagesPadding: {
-        paddingTop: 20,
-        paddingBottom: 40,
+        paddingTop: 16,
+        paddingBottom: 30,
         paddingHorizontal: 16,
     },
+    encryptionBanner: {
+        backgroundColor: 'rgba(255,191,0,0.08)',
+        padding: 12,
+        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+        marginHorizontal: 10,
+        gap: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(255,191,0,0.15)',
+    },
+    encryptionBannerLight: {
+        backgroundColor: 'rgba(245,158,11,0.05)',
+        borderColor: 'rgba(245,158,11,0.1)',
+    },
+    encryptionText: {
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.5)',
+        textAlign: 'center',
+        flex: 1,
+        lineHeight: 16,
+    },
     messageWrapper: {
-        marginBottom: 16,
-        maxWidth: '80%',
+        marginBottom: 12,
+        maxWidth: '82%',
     },
     myMessage: {
         alignSelf: 'flex-end',
-        alignItems: 'flex-end',
     },
     theirMessage: {
         alignSelf: 'flex-start',
-        alignItems: 'flex-start',
     },
     bubble: {
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 24,
-        minWidth: 80, // Minimum width for check icon
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 20,
+        minWidth: 90,
     },
     myBubble: {
         backgroundColor: '#6366F1',
         borderBottomRightRadius: 4,
-        paddingBottom: 22, // Space for check icon
     },
     theirBubble: {
         backgroundColor: 'rgba(255,255,255,0.08)',
@@ -286,7 +363,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 5,
-        elevation: 2,
+        elevation: 1,
     },
     messageText: {
         fontSize: 16,
@@ -298,42 +375,47 @@ const styles = StyleSheet.create({
     },
     theirText: {
         color: '#fff',
-        opacity: 0.9,
+        opacity: 0.95,
     },
-    statusCheck: {
-        position: 'absolute',
-        bottom: 4,
-        right: 8,
+    msgDetails: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: 4,
+        gap: 4,
     },
     timeText: {
         fontSize: 10,
-        color: 'rgba(255,255,255,0.3)',
-        marginTop: 4,
+        color: 'rgba(255,255,255,0.4)',
+    },
+    myTimeText: {
+        color: 'rgba(255,255,255,0.7)',
+    },
+    statusCheck: {
+        marginLeft: 2,
     },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'flex-end',
         paddingHorizontal: 12,
-        paddingBottom: Platform.OS === 'ios' ? 30 : 15,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 16,
         paddingTop: 10,
-        gap: 8,
-    },
-    inputWrapperLight: {
-        backgroundColor: '#F2F2F7',
+        gap: 10,
     },
     inputFieldContainer: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(255,255,255,0.08)',
-        borderRadius: 28,
-        paddingHorizontal: 8,
+        borderRadius: 24,
+        paddingHorizontal: 6,
         minHeight: 48,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
     },
     inputFieldLight: {
         backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: '#E9ECEF',
     },
     input: {
         flex: 1,
@@ -349,50 +431,39 @@ const styles = StyleSheet.create({
     actionRow: {
         justifyContent: 'center',
         alignItems: 'center',
-        width: 56,
-        height: 56,
+        width: 52,
+        height: 52,
     },
     sendBtn: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         backgroundColor: '#6366F1',
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#6366F1',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 4,
     },
     orbWrapper: {
-        width: 54,
-        height: 54,
+        width: 52,
+        height: 52,
         justifyContent: 'center',
         alignItems: 'center',
     },
     durationText: {
         position: 'absolute',
-        bottom: -20,
+        bottom: -18,
         fontSize: 10,
         color: '#6366F1',
         fontWeight: 'bold',
     },
     textDark: {
-        color: '#111827',
+        color: '#1A1D23',
     },
-    encryptionBanner: {
-        backgroundColor: 'rgba(255,193,7,0.1)',
-        padding: 10,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
-        marginHorizontal: 20,
-        gap: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(255,193,7,0.2)',
-    },
-    encryptionText: {
-        fontSize: 11,
-        color: 'rgba(255,255,255,0.6)',
-        textAlign: 'center',
-        flex: 1,
+    textDarkDim: {
+        color: '#6C757D',
     }
 });

@@ -13,7 +13,8 @@
       "infoPlist": {
         "NSCalendarsUsageDescription": "Mindspace needs access to your calendar to sync your reminders.",
         "NSRemindersUsageDescription": "Mindspace needs access to your reminders to keep you organized.",
-        "NSMicrophoneUsageDescription": "Mindspace needs access to your microphone for voice notes and transcription."
+        "NSMicrophoneUsageDescription": "Gotcha needs access to your microphone for high-quality voice messaging.",
+        "NSContactsUsageDescription": "Gotcha needs access to your contacts to let you chat with friends and family."
       }
     },
     "android": {

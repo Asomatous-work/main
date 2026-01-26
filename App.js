@@ -56,7 +56,7 @@ export default function App() {
             recordingRef.current = null;
 
             if (recordingData && activeChat) {
-                sendMessage(activeChat.id, `Voice message (${recordingData.duration.toFixed(1)}s)`, 'audio');
+                await sendMessage(activeChat.id, `Voice message (${recordingData.duration.toFixed(1)}s)`, 'audio');
                 setHudData({ title: 'Voice Sent', subtext: 'Audio message transmitted' });
                 setHudVisible(true);
                 setTimeout(() => setHudVisible(false), 2000);
@@ -100,7 +100,7 @@ export default function App() {
                             <GotchaChatRoom
                                 chat={activeChat}
                                 onBack={() => setActiveChat(null)}
-                                onSendMessage={(id, txt) => sendMessage(id, txt)}
+                                onSendMessage={async (id, txt) => await sendMessage(id, txt)}
                                 onStartRecording={handleToggleRecording}
                                 isRecording={isRecording}
                                 recordDuration={recordDuration}

@@ -126,3 +126,32 @@ export const sendMessage = async (chatId, text, type = 'text') => {
         return null;
     }
 };
+
+export const createChat = async (contact) => {
+    try {
+        const storedChats = await AsyncStorage.getItem(CHATS_STORAGE_KEY);
+        let chats = storedChats ? JSON.parse(storedChats) : [];
+
+        // Check if chat already exists
+        const existingChat = chats.find(c => c.id === contact.id || c.phoneNumber === contact.phoneNumber);
+        if (existingChat) return existingChat;
+
+        const newChat = {
+            id: contact.id || Math.random().toString(36).substr(2, 9),
+            name: contact.name,
+            phoneNumber: contact.phoneNumber,
+            lastMessage: 'Started a new conversation',
+            time: 'Just now',
+            unread: 0,
+            avatar: contact.avatar,
+            messages: []
+        };
+
+        chats.unshift(newChat);
+        await AsyncStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(chats));
+        return newChat;
+    } catch (err) {
+        console.error('Failed to create chat', err);
+        return null;
+    }
+};
