@@ -11,7 +11,7 @@ import {
     Send,
     Smile
 } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     Dimensions,
     Image,
@@ -42,7 +42,7 @@ export const GotchaChatRoom = ({
     const [inputText, setInputText] = useState('');
     const scrollRef = useRef(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setMessages(chat?.messages || []);
         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }, [chat?.id, chat?.messages]);

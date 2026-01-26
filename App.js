@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRef, useState } from 'react';
@@ -12,7 +13,7 @@ import { LoginScreen } from './src/components/LoginScreen';
 import { ExecutionHUD } from './src/components/ModernUI';
 import { MeshGradientBackground } from './src/components/PremiumUI';
 import { SettingsSheet } from './src/components/SettingsSheet';
-import { sendMessage } from './src/services/ChatService';
+import { createChat, sendMessage } from './src/services/ChatService';
 import { formatDuration, getRecordingStatus, startRecording, stopRecording } from './src/services/VoiceService';
 
 const USER_SESSION_KEY = '@gotcha_active_user';
@@ -20,6 +21,7 @@ const USER_SESSION_KEY = '@gotcha_active_user';
 export default function App() {
     const [activeUser, setActiveUser] = useState(null);
     const [activeChat, setActiveChat] = useState(null);
+    const [brainBoxVisible, setBrainBoxVisible] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [recordDuration, setRecordDuration] = useState('0:00');
     const [hudVisible, setHudVisible] = useState(false);
@@ -34,7 +36,7 @@ export default function App() {
     const durationInterval = useRef(null);
     const recordingRef = useRef(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         checkSession();
     }, []);
 
@@ -145,12 +147,30 @@ export default function App() {
                                         }
                                     }}
                                     onOpenSettings={() => setSettingsVisible(true)}
+                                    onOpenBrainBox={() => setBrainBoxVisible(true)}
                                     darkMode={darkMode}
                                     isVaultUnlocked={isVaultUnlocked}
                                 />
                             </SafeAreaView>
                         )
                     )}
+
+                    <Modal visible={brainBoxVisible} animationType="slide">
+                        <BrainBoxHome
+                            onClose={() => setBrainBoxVisible(false)}
+                            onStartAiChat={() => {
+                                setBrainBoxVisible(false);
+                                // Start a chat with AI
+                                const aiContact = {
+                                    id: 'ai_brainbox',
+                                    name: 'BrainBox AI',
+                                    avatar: 'https://img.icons8.com/isometric/512/artificial-intelligence.png',
+                                    phoneNumber: 'AI_BOT'
+                                };
+                                createChat(aiContact).then(chat => setActiveChat(chat));
+                            }}
+                        />
+                    </Modal>
 
                     <ExecutionHUD visible={hudVisible} title={hudData.title} subtext={hudData.subtext} />
 

@@ -1,8 +1,8 @@
 
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Edit3, Lock, Search, Settings, UserPlus, X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { Edit3, Lock, Plus, Search, Settings, UserPlus, X } from 'lucide-react-native';
+import { useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -22,7 +22,7 @@ import { getPhoneContacts } from '../services/ContactService';
 
 const { width, height } = Dimensions.get('window');
 
-export const GotchaChatList = ({ onSelectChat, onOpenSettings, darkMode, isVaultUnlocked }) => {
+export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, darkMode, isVaultUnlocked }) => {
     const [chats, setChats] = useState([]);
     const [search, setSearch] = useState('');
     const [contactsModalVisible, setContactsModalVisible] = useState(false);
@@ -30,7 +30,7 @@ export const GotchaChatList = ({ onSelectChat, onOpenSettings, darkMode, isVault
     const [loadingContacts, setLoadingContacts] = useState(false);
     const [contactSearch, setContactSearch] = useState('');
 
-    useEffect(() => {
+    React.useEffect(() => {
         loadChats();
     }, []);
 
@@ -124,6 +124,9 @@ export const GotchaChatList = ({ onSelectChat, onOpenSettings, darkMode, isVault
                     <Text style={[styles.title, !darkMode && styles.textDark]}>Messages</Text>
                 </View>
                 <View style={styles.headerActions}>
+                    <TouchableOpacity style={[styles.iconBtn, styles.aiBtn]} onPress={onOpenBrainBox}>
+                        <Sparkles size={22} color="#00F2FE" />
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.iconBtn} onPress={onOpenSettings}>
                         <Settings size={22} color={darkMode ? "#fff" : "#000"} />
                     </TouchableOpacity>
@@ -301,6 +304,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.08)',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    aiBtn: {
+        backgroundColor: 'rgba(0,242,254,0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(0,242,254,0.2)',
     },
     activeContainer: {
         height: 100,
