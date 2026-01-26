@@ -3,6 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useRef, useState } from 'react';
 import { Alert, StatusBar, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import 'react-native-get-random-values';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { GotchaChatList } from './src/components/GotchaChatList';

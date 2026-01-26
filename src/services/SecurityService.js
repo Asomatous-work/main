@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CryptoJS from 'crypto-js';
 import * as Crypto from 'expo-crypto';
+import 'react-native-get-random-values';
 
 const KEYS_STORAGE_PREFIX = '@gotcha_keys_';
 
