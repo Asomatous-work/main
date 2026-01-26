@@ -15,6 +15,8 @@ import { SettingsSheet } from './src/components/SettingsSheet';
 import { sendMessage } from './src/services/ChatService';
 import { formatDuration, getRecordingStatus, startRecording, stopRecording } from './src/services/VoiceService';
 
+const USER_SESSION_KEY = '@gotcha_active_user';
+
 export default function App() {
     const [activeUser, setActiveUser] = useState(null);
     const [activeChat, setActiveChat] = useState(null);
@@ -31,6 +33,35 @@ export default function App() {
 
     const durationInterval = useRef(null);
     const recordingRef = useRef(null);
+
+    useEffect(() => {
+        checkSession();
+    }, []);
+
+    const checkSession = async () => {
+        try {
+            const savedUser = await AsyncStorage.getItem(USER_SESSION_KEY);
+            if (savedUser) {
+                setActiveUser(JSON.parse(savedUser));
+            }
+        } catch (e) {
+            console.error('Failed to load session', e);
+        }
+    };
+
+    const handleLogin = async (phoneNumber) => {
+        const user = { id: phoneNumber, name: 'Me' };
+        setActiveUser(user);
+        await AsyncStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    };
+
+    const handleLogout = async () => {
+        setActiveUser(null);
+        setActiveChat(null);
+        await AsyncStorage.removeItem(USER_SESSION_KEY);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    };
 
     const handleVaultToggle = async () => {
         if (isVaultUnlocked) {
@@ -90,10 +121,7 @@ export default function App() {
 
                     {!activeUser ? (
                         <LoginScreen
-                            onLogin={(phoneNumber) => {
-                                setActiveUser({ id: phoneNumber, name: 'Me' });
-                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            }}
+                            onLogin={handleLogin}
                         />
                     ) : (
                         activeChat ? (
@@ -135,6 +163,7 @@ export default function App() {
                         onToggleDarkMode={setDarkMode}
                         isVaultUnlocked={isVaultUnlocked}
                         onToggleVault={handleVaultToggle}
+                        onLogout={handleLogout}
                     />
                 </View>
             </GestureHandlerRootView>

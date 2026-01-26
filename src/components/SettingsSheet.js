@@ -7,7 +7,8 @@ export const SettingsSheet = ({
     visible, onClose,
     useMesh, onToggleMesh,
     darkMode, onToggleDarkMode,
-    isVaultUnlocked, onToggleVault
+    isVaultUnlocked, onToggleVault,
+    onLogout
 }) => {
 
     return (
@@ -114,6 +115,20 @@ export const SettingsSheet = ({
                             <TouchableOpacity style={[styles.row, styles.noBorder, !darkMode && styles.rowLight]}>
                                 <Text style={[styles.rowLabel, !darkMode && styles.textLight]}>Terms of Service</Text>
                                 <ChevronRight size={16} color="rgba(150,150,150,0.5)" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Section: Account */}
+                        <Text style={styles.sectionHeader}>ACCOUNT</Text>
+                        <View style={[styles.sectionContainer, !darkMode && styles.cardLight, { marginBottom: 60 }]}>
+                            <TouchableOpacity
+                                style={[styles.row, styles.noBorder, !darkMode && styles.rowLight]}
+                                onPress={onLogout}
+                            >
+                                <View style={[styles.rowIconBg, { backgroundColor: '#EF4444' }]}>
+                                    <LogOut size={18} color="#fff" />
+                                </View>
+                                <Text style={[styles.rowLabel, { color: '#EF4444' }]}>Sign Out</Text>
                             </TouchableOpacity>
                         </View>
 

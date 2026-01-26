@@ -9,6 +9,7 @@ import {
     FlatList,
     Image,
     Modal,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
