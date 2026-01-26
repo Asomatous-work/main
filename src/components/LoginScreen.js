@@ -26,6 +26,7 @@ export const LoginScreen = ({ onLogin }) => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [step, setStep] = useState('phone'); // 'phone' | 'otp'
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [generatedOtp, setGeneratedOtp] = useState('');
     const [loading, setLoading] = useState(false);
 
     const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -38,6 +39,17 @@ export const LoginScreen = ({ onLogin }) => {
         }
 
         setLoading(true);
+
+        // Generate a random 6-digit OTP
+        const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        setGeneratedOtp(newOtp);
+
+        // Log to terminal as requested
+        console.log("-----------------------------------------");
+        console.log(`📲 GOTCHA LOGIN OTP FOR +91 ${phoneNumber}:`);
+        console.log(`👉 CODE: ${newOtp}`);
+        console.log("-----------------------------------------");
+
         // Simulate premium loading/network delay
         setTimeout(() => {
             setLoading(false);
@@ -83,10 +95,9 @@ export const LoginScreen = ({ onLogin }) => {
         setLoading(true);
         setTimeout(() => {
             setLoading(false);
-            if (fullOtp === '123456' || true) { // Simulated success for dev
+            if (fullOtp === generatedOtp) {
                 onLogin(`+91${phoneNumber}`);
             } else {
-                Alert.alert("Invalid Code", "The OTP you entered is incorrect.");
             }
         }, 1200);
     };
