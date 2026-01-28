@@ -85,11 +85,11 @@ export const GotchaChatRoom = ({
     };
 
     const handleSend = async () => {
-        if (!inputText.trim()) return;
+        if (!inputText.trim() || !chat) return;
 
         if (isEditing && selectedMessage) {
             const updatedMessages = messages.map(m =>
-                m.id === selectedMessage.id ? { ...m, text: inputText, isEdited: true } : m
+                m.id === selectedMessage?.id ? { ...m, text: inputText, isEdited: true } : m
             );
             setMessages(updatedMessages);
             setIsEditing(false);
@@ -117,7 +117,9 @@ export const GotchaChatRoom = ({
 
         setInputText('');
 
-        onSendMessage(chat.id, inputText);
+        if (chat?.id) {
+            onSendMessage(chat.id, inputText);
+        }
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         setTimeout(() => {
@@ -130,20 +132,15 @@ export const GotchaChatRoom = ({
     };
 
     const handleLongPress = (msg) => {
-        if (msg.sender !== 'me') {
-            // Reactions only for received messages or restricted options
-            setSelectedMessage(msg);
-            setOptionsVisible(true);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            return;
-        }
+        if (!msg) return;
         setSelectedMessage(msg);
         setOptionsVisible(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     };
 
     const handleDelete = () => {
-        const updatedMessages = messages.filter(m => m.id !== selectedMessage.id);
+        if (!selectedMessage) return;
+        const updatedMessages = messages.filter(m => m.id !== selectedMessage?.id);
         setMessages(updatedMessages);
         setOptionsVisible(false);
         setSelectedMessage(null);
@@ -151,8 +148,9 @@ export const GotchaChatRoom = ({
     };
 
     const handleEdit = () => {
+        if (!selectedMessage) return;
         const now = Date.now();
-        const msgTime = selectedMessage.timestamp || now;
+        const msgTime = selectedMessage?.timestamp || now;
         const diffMins = (now - msgTime) / (1000 * 60);
 
         if (diffMins > 10) {
@@ -161,14 +159,15 @@ export const GotchaChatRoom = ({
             return;
         }
 
-        setInputText(selectedMessage.text);
+        setInputText(selectedMessage?.text || '');
         setIsEditing(true);
         setOptionsVisible(false);
     };
 
     const handleReact = (emoji) => {
+        if (!selectedMessage) return;
         const updatedMessages = messages.map(m =>
-            m.id === selectedMessage.id ? { ...m, reaction: emoji } : m
+            m.id === selectedMessage?.id ? { ...m, reaction: emoji } : m
         );
         setMessages(updatedMessages);
         setOptionsVisible(false);

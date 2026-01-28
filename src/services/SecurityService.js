@@ -42,15 +42,12 @@ export const decryptMessage = (encryptedText, key) => {
         const originalText = bytes.toString(CryptoJS.enc.Utf8);
 
         if (!originalText && cipherText) {
-            // If bytes.toString(Utf8) is empty but we had cipherText, it's a decryption failure
-            console.warn('[SECURITY] Decryption resulted in empty string - likely wrong key');
+            // Decryption failure (likely key mismatch during development)
             return '🔒 Encrypted Message';
         }
 
         return originalText || '🔒 Message';
     } catch (error) {
-        console.error('[SECURITY] Decryption failed:', error.message);
-        // This is where "Malformed UTF-8" usually happens
         return '🔒 Message (Secure)';
     }
 };
