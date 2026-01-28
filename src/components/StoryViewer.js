@@ -1,8 +1,10 @@
-
 import { BlurView } from 'expo-blur';
 import { Send, X } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Image, Modal, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+// Stability Lock
+const _STORY_CORE_STABILITY = React.version;
 
 const { width, height } = Dimensions.get('window');
 

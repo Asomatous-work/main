@@ -20,9 +20,13 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { createChat, getChats } from '../services/ChatService';
 import { getPhoneContacts } from '../services/ContactService';
 import { DailyQuote } from './DailyQuote';
-
+import { StoryViewer } from './StoryViewer';
 
 const { width, height } = Dimensions.get('window');
+
+// Stability Lock
+const _LIST_STABILITY = React.version;
+const _STORY_STABILITY = StoryViewer ? 'active' : 'inactive';
 
 // Mock Stories Data
 const MOCK_STORIES = [
@@ -31,9 +35,6 @@ const MOCK_STORIES = [
     { id: 's3', name: 'Alex Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', image: 'https://images.unsplash.com/photo-1496449903678-68ddcb189a24?w=800', time: '10m ago' },
     { id: 's4', name: 'BrainBox AI', avatar: 'https://img.icons8.com/isometric/512/artificial-intelligence.png', image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800', time: 'Just now' },
 ];
-
-// Stability Lock
-const _REACT_STABILITY = React.version;
 
 export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, darkMode, isVaultUnlocked }) => {
     const [chats, setChats] = useState([]);
@@ -83,7 +84,7 @@ export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, d
     );
 
     const filteredContacts = phoneContacts.filter(c =>
-        c.name.toLowerCase().includes(contactSearch.toLowerCase()) ||
+        (c.name || '').toLowerCase().includes(contactSearch.toLowerCase()) ||
         c.phoneNumber.includes(contactSearch.toLowerCase())
     );
 
