@@ -1,6 +1,6 @@
 
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
     interpolate,
@@ -19,7 +19,7 @@ export const BrainBoxAI = ({ size = 200 }) => {
     const pulse = useSharedValue(1);
     const rotation = useSharedValue(0);
 
-    React.useEffect(() => {
+    useEffect(() => {
         pulse.value = withRepeat(
             withSequence(
                 withTiming(1.1, { duration: 1500 }),

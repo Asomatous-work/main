@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useRef, useState } from 'react';
-import { Alert, StatusBar, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Modal, StatusBar, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -10,7 +10,6 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GotchaChatList } from './src/components/GotchaChatList';
 import { GotchaChatRoom } from './src/components/GotchaChatRoom';
 import { LoginScreen } from './src/components/LoginScreen';
-import { ExecutionHUD } from './src/components/ModernUI';
 import { MeshGradientBackground } from './src/components/PremiumUI';
 import { SettingsSheet } from './src/components/SettingsSheet';
 import { createChat, sendMessage } from './src/services/ChatService';
@@ -24,8 +23,6 @@ export default function App() {
     const [brainBoxVisible, setBrainBoxVisible] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [recordDuration, setRecordDuration] = useState('0:00');
-    const [hudVisible, setHudVisible] = useState(false);
-    const [hudData, setHudData] = useState({ title: '', subtext: '' });
     const [settingsVisible, setSettingsVisible] = useState(false);
 
     // Settings State
@@ -36,7 +33,7 @@ export default function App() {
     const durationInterval = useRef(null);
     const recordingRef = useRef(null);
 
-    React.useEffect(() => {
+    useEffect(() => {
         checkSession();
     }, []);
 
@@ -90,9 +87,6 @@ export default function App() {
 
             if (recordingData && activeChat) {
                 await sendMessage(activeChat.id, `Voice message (${recordingData.duration.toFixed(1)}s)`, 'audio');
-                setHudData({ title: 'Voice Sent', subtext: 'Audio message transmitted' });
-                setHudVisible(true);
-                setTimeout(() => setHudVisible(false), 2000);
             }
         } else {
             const recording = await startRecording();
@@ -172,7 +166,7 @@ export default function App() {
                         />
                     </Modal>
 
-                    <ExecutionHUD visible={hudVisible} title={hudData.title} subtext={hudData.subtext} />
+
 
                     <SettingsSheet
                         visible={settingsVisible}

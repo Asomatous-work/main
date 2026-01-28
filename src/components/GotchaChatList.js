@@ -1,8 +1,7 @@
-
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Edit3, Lock, Plus, Search, Settings, UserPlus, X } from 'lucide-react-native';
-import { useState } from 'react';
+import { Edit3, Lock, Plus, Search, Settings, Sparkles, UserPlus, X } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -19,6 +18,7 @@ import {
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { createChat, getChats } from '../services/ChatService';
 import { getPhoneContacts } from '../services/ContactService';
+import { DailyQuote } from './DailyQuote';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,7 +30,7 @@ export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, d
     const [loadingContacts, setLoadingContacts] = useState(false);
     const [contactSearch, setContactSearch] = useState('');
 
-    React.useEffect(() => {
+    useEffect(() => {
         loadChats();
     }, []);
 
@@ -135,6 +135,8 @@ export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, d
                     </TouchableOpacity>
                 </View>
             </View>
+
+            <DailyQuote darkMode={darkMode} />
 
             {/* Stories-like placeholder - Advanced UI from Figma */}
             <View style={styles.activeContainer}>
