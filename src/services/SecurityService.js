@@ -34,12 +34,24 @@ export const encryptMessage = (text, key) => {
 export const decryptMessage = (encryptedText, key) => {
     try {
         if (!encryptedText || !key) return encryptedText;
-        const bytes = CryptoJS.AES.decrypt(encryptedText, key);
+
+        // Ensure we are working with a string for decryption
+        const cipherText = typeof encryptedText === 'string' ? encryptedText : String(encryptedText);
+
+        const bytes = CryptoJS.AES.decrypt(cipherText, key);
         const originalText = bytes.toString(CryptoJS.enc.Utf8);
-        return originalText || '⚠️ Decryption Error';
+
+        if (!originalText && cipherText) {
+            // If bytes.toString(Utf8) is empty but we had cipherText, it's a decryption failure
+            console.warn('[SECURITY] Decryption resulted in empty string - likely wrong key');
+            return '🔒 Encrypted Message';
+        }
+
+        return originalText || '🔒 Message';
     } catch (error) {
-        console.error('Decryption failed:', error);
-        return '🔒 Message Encrypted';
+        console.error('[SECURITY] Decryption failed:', error.message);
+        // This is where "Malformed UTF-8" usually happens
+        return '🔒 Message (Secure)';
     }
 };
 

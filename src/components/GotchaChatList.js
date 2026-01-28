@@ -21,7 +21,16 @@ import { createChat, getChats } from '../services/ChatService';
 import { getPhoneContacts } from '../services/ContactService';
 import { DailyQuote } from './DailyQuote';
 
+
 const { width, height } = Dimensions.get('window');
+
+// Mock Stories Data
+const MOCK_STORIES = [
+    { id: 's1', name: 'Design Team', avatar: 'https://images.unsplash.com/photo-1522071823991-b59fea12f4ef?w=100&h=100&fit=crop', image: 'https://images.unsplash.com/photo-1554147090-e1221a04a025?w=800', time: '2h ago' },
+    { id: 's2', name: 'Sarah Jordan', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop', image: 'https://images.unsplash.com/photo-1488161628813-04466f872be2?w=800', time: '5h ago' },
+    { id: 's3', name: 'Alex Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', image: 'https://images.unsplash.com/photo-1496449903678-68ddcb189a24?w=800', time: '10m ago' },
+    { id: 's4', name: 'BrainBox AI', avatar: 'https://img.icons8.com/isometric/512/artificial-intelligence.png', image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800', time: 'Just now' },
+];
 
 // Stability Lock
 const _REACT_STABILITY = React.version;
@@ -33,6 +42,15 @@ export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, d
     const [phoneContacts, setPhoneContacts] = useState([]);
     const [loadingContacts, setLoadingContacts] = useState(false);
     const [contactSearch, setContactSearch] = useState('');
+
+    // Stories State
+    const [storyVisible, setStoryVisible] = useState(false);
+    const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
+
+    const handleOpenStory = (index) => {
+        setSelectedStoryIndex(index);
+        setStoryVisible(true);
+    };
 
     useEffect(() => {
         loadChats();
@@ -142,34 +160,36 @@ export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, d
 
             <DailyQuote darkMode={darkMode} />
 
-            {/* Stories-like placeholder - Advanced UI from Figma */}
+            {/* Stories Section */}
             <View style={styles.activeContainer}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeScroll}>
                     <TouchableOpacity style={styles.activeItem} onPress={handleSyncContacts}>
                         <View style={styles.addActive}>
                             <Plus size={24} color="#6366F1" />
                         </View>
-                        <Text style={[styles.activeName, !darkMode && styles.textDarkDim]}>You</Text>
+                        <Text style={[styles.activeName, !darkMode && styles.textDarkDim]}>Add Story</Text>
                     </TouchableOpacity>
-                    {chats.slice(0, 5).map((chat, i) => (
-                        <TouchableOpacity key={chat.id} style={styles.activeItem} onPress={() => onSelectChat(chat)}>
+                    {MOCK_STORIES.map((story, i) => (
+                        <TouchableOpacity key={story.id} style={styles.activeItem} onPress={() => handleOpenStory(i)}>
                             <View style={styles.activeAvatarWrapper}>
-                                {chat.avatar ? (
-                                    <Image source={{ uri: chat.avatar }} style={styles.activeAvatar} />
-                                ) : (
-                                    <View style={[styles.activeAvatar, { backgroundColor: `hsl(${(i * 97) % 360}, 60%, 50%)` }]}>
-                                        <Text style={styles.avatarText}>{(chat.name || '?')[0]}</Text>
-                                    </View>
-                                )}
-                                <View style={styles.onlineIndicator} />
+                                <View style={styles.gradientRing}>
+                                    <Image source={{ uri: story.avatar }} style={styles.activeAvatarImg} />
+                                </View>
                             </View>
                             <Text numberOfLines={1} style={[styles.activeName, !darkMode && styles.textDarkDim]}>
-                                {chat.name.split(' ')[0]}
+                                {(story.name || 'User').split(' ')[0]}
                             </Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
             </View>
+
+            <StoryViewer
+                visible={storyVisible}
+                stories={MOCK_STORIES}
+                initialIndex={selectedStoryIndex}
+                onClose={() => setStoryVisible(false)}
+            />
 
             {/* Search */}
             <View style={[styles.searchContainer, !darkMode && styles.searchLight]}>
@@ -333,19 +353,27 @@ const styles = StyleSheet.create({
         position: 'relative',
         marginBottom: 6,
     },
-    activeAvatar: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+    gradientRing: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        padding: 3,
+        borderWidth: 2,
+        borderColor: '#6366F1', // Primary brand color
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#6366F1',
+    },
+    activeAvatarImg: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: 'rgba(255,255,255,0.1)',
     },
     activeName: {
         fontSize: 12,
         color: 'rgba(255,255,255,0.6)',
         fontWeight: '500',
+        marginTop: 4,
     },
     addActive: {
         width: 56,

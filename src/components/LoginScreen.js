@@ -97,7 +97,7 @@ export const LoginScreen = ({ onLogin }) => {
 
         setTimeout(() => {
             setLoading(false);
-            if (fullOtp === generatedOtp || fullOtp === '000000') { // Added 000000 bypass for testing
+            if (fullOtp === generatedOtp) {
                 console.log("[DEBUG] OTP Correct. Calling onLogin...");
                 onLogin(`+91${phoneNumber}`);
             } else {

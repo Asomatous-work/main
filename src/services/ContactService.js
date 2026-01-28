@@ -27,7 +27,7 @@ export const getPhoneContacts = async () => {
                         name: contact.name,
                         phoneNumber: contact.phoneNumbers[0].number.replace(/\s/g, ''),
                         avatar: contact.imageAvailable ? contact.image.uri : null,
-                        initials: contact.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                        initials: (contact.name || 'Anonymous').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
                     }))
                     .sort((a, b) => a.name.localeCompare(b.name));
             }
