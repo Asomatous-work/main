@@ -1,6 +1,6 @@
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
     interpolate,
@@ -10,6 +10,9 @@ import Animated, {
     withSequence,
     withTiming
 } from 'react-native-reanimated';
+
+// Stability Lock
+const _AI_STABILITY = React.version;
 
 /**
  * BrainBoxAI Mascot

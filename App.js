@@ -1,12 +1,14 @@
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Modal, StatusBar, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrainBoxHome } from './src/components/BrainBoxHome';
 import { GotchaChatList } from './src/components/GotchaChatList';
 import { GotchaChatRoom } from './src/components/GotchaChatRoom';
 import { LoginScreen } from './src/components/LoginScreen';
@@ -16,6 +18,9 @@ import { createChat, sendMessage } from './src/services/ChatService';
 import { formatDuration, getRecordingStatus, startRecording, stopRecording } from './src/services/VoiceService';
 
 const USER_SESSION_KEY = '@gotcha_active_user';
+
+// Force React presence to prevent auto-stripping by misconfigured linters
+const _REACT_STABILITY_LOCK = React.version;
 
 export default function App() {
     const [activeUser, setActiveUser] = useState(null);
@@ -165,8 +170,6 @@ export default function App() {
                             }}
                         />
                     </Modal>
-
-
 
                     <SettingsSheet
                         visible={settingsVisible}

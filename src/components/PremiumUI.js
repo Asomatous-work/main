@@ -1,3 +1,4 @@
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';

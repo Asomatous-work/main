@@ -1,7 +1,8 @@
+
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Edit3, Lock, Plus, Search, Settings, Sparkles, UserPlus, X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -21,6 +22,9 @@ import { getPhoneContacts } from '../services/ContactService';
 import { DailyQuote } from './DailyQuote';
 
 const { width, height } = Dimensions.get('window');
+
+// Stability Lock
+const _REACT_STABILITY = React.version;
 
 export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, darkMode, isVaultUnlocked }) => {
     const [chats, setChats] = useState([]);

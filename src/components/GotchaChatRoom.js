@@ -11,7 +11,7 @@ import {
     Send,
     Smile
 } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Dimensions,
     Image,
@@ -28,6 +28,9 @@ import Animated, { FadeIn, Layout, SlideInRight } from 'react-native-reanimated'
 import { GlowOrb } from './PremiumUI';
 
 const { width } = Dimensions.get('window');
+
+// Stability Lock
+const _REACT_STABILITY = React.version;
 
 export const GotchaChatRoom = ({
     chat,

@@ -1,11 +1,14 @@
 
 import { BlurView } from 'expo-blur';
 import { Quote } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
+
+// Stability Lock
+const _STAB_LOCK = React.version;
 
 const QUOTES = [
     { text: "Your potential is the sum of all the possibilities you have yet to explore.", author: "O.W. Holmes" },
