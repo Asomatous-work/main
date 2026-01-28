@@ -1,5 +1,9 @@
-import { ChevronRight, Moon, Palette, Shield, Zap } from 'lucide-react-native';
+import { ChevronRight, LogOut, Moon, Palette, Shield, Zap } from 'lucide-react-native';
+import React from 'react';
 import { Dimensions, Image, Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+
+// Stability Lock
+const _SETTINGS_STABILITY = React.version;
 
 const { height } = Dimensions.get('window');
 
