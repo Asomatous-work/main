@@ -54,6 +54,7 @@ export default function App() {
     };
 
     const handleLogin = async (phoneNumber) => {
+        console.log(`[DEBUG] handleLogin triggered for ${phoneNumber}`);
         const user = { id: phoneNumber, name: 'Me' };
         setActiveUser(user);
         await AsyncStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
