@@ -5,17 +5,23 @@ import {
     Check,
     CheckCheck,
     ChevronLeft,
+    Clock,
+    Edit2,
     Lock,
     MoreHorizontal,
     Plus,
     Send,
-    Smile
+    Smile,
+    Trash2,
+    X
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+    Alert,
     Dimensions,
     Image,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     ScrollView,
     StyleSheet,
@@ -24,13 +30,15 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import Animated, { FadeIn, Layout, SlideInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, Layout, SlideInDown, SlideInRight } from 'react-native-reanimated';
 import { GlowOrb } from './PremiumUI';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 // Stability Lock
-const _REACT_STABILITY = React.version;
+const _CHAT_ROOM_STABILITY = React.version;
+
+const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢', '🙏', '👍'];
 
 export const GotchaChatRoom = ({
     chat,
@@ -43,6 +51,11 @@ export const GotchaChatRoom = ({
 }) => {
     const [messages, setMessages] = useState(chat?.messages || []);
     const [inputText, setInputText] = useState('');
+    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [optionsVisible, setOptionsVisible] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [reminderVisible, setReminderVisible] = useState(false);
+    const [detectedReminder, setDetectedReminder] = useState(null);
     const scrollRef = useRef(null);
 
     useEffect(() => {
@@ -50,8 +63,41 @@ export const GotchaChatRoom = ({
         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }, [chat?.id, chat?.messages]);
 
+    // NLP for Reminder Detection
+    const checkReminder = (text) => {
+        const lowerText = text.toLowerCase();
+        const timeRegex = /(\d{1,2}(?::\d{2})?\s*(?:am|pm|am|pm))/i;
+        const dayRegex = /(tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next week|tonight)/i;
+
+        const hasTime = timeRegex.test(lowerText);
+        const hasDay = dayRegex.test(lowerText);
+
+        if (hasTime || hasDay) {
+            const timeMatch = lowerText.match(timeRegex);
+            const dayMatch = lowerText.match(dayRegex);
+            setDetectedReminder({
+                time: timeMatch ? timeMatch[0] : 'undetermined',
+                day: dayMatch ? dayMatch[0] : 'today',
+                text: text
+            });
+            setReminderVisible(true);
+        }
+    };
+
     const handleSend = async () => {
         if (!inputText.trim()) return;
+
+        if (isEditing && selectedMessage) {
+            const updatedMessages = messages.map(m =>
+                m.id === selectedMessage.id ? { ...m, text: inputText, isEdited: true } : m
+            );
+            setMessages(updatedMessages);
+            setIsEditing(false);
+            setSelectedMessage(null);
+            setInputText('');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            return;
+        }
 
         const newMsgId = Date.now().toString();
         const newMsg = {
@@ -59,17 +105,21 @@ export const GotchaChatRoom = ({
             text: inputText,
             sender: 'me',
             time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-            status: 'sent' // sent | delivered | read
+            status: 'sent',
+            timestamp: Date.now()
         };
 
         const updatedMessages = [...messages, newMsg];
         setMessages(updatedMessages);
+
+        // Trigger Reminder Check
+        checkReminder(inputText);
+
         setInputText('');
 
         onSendMessage(chat.id, inputText);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        // Simulate real-time status updates - UX from advanced apps
         setTimeout(() => {
             setMessages(prev => prev.map(m => m.id === newMsgId ? { ...m, status: 'delivered' } : m));
         }, 1500);
@@ -77,6 +127,53 @@ export const GotchaChatRoom = ({
         setTimeout(() => {
             setMessages(prev => prev.map(m => m.id === newMsgId ? { ...m, status: 'read' } : m));
         }, 3000);
+    };
+
+    const handleLongPress = (msg) => {
+        if (msg.sender !== 'me') {
+            // Reactions only for received messages or restricted options
+            setSelectedMessage(msg);
+            setOptionsVisible(true);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            return;
+        }
+        setSelectedMessage(msg);
+        setOptionsVisible(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    };
+
+    const handleDelete = () => {
+        const updatedMessages = messages.filter(m => m.id !== selectedMessage.id);
+        setMessages(updatedMessages);
+        setOptionsVisible(false);
+        setSelectedMessage(null);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    };
+
+    const handleEdit = () => {
+        const now = Date.now();
+        const msgTime = selectedMessage.timestamp || now;
+        const diffMins = (now - msgTime) / (1000 * 60);
+
+        if (diffMins > 10) {
+            Alert.alert("Cannot Edit", "Messages can only be edited within 10 minutes of sending.");
+            setOptionsVisible(false);
+            return;
+        }
+
+        setInputText(selectedMessage.text);
+        setIsEditing(true);
+        setOptionsVisible(false);
+    };
+
+    const handleReact = (emoji) => {
+        const updatedMessages = messages.map(m =>
+            m.id === selectedMessage.id ? { ...m, reaction: emoji } : m
+        );
+        setMessages(updatedMessages);
+        setOptionsVisible(false);
+        setSelectedMessage(null);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     };
 
     const renderStatusIcon = (status) => {
@@ -152,28 +249,62 @@ export const GotchaChatRoom = ({
                             msg.sender === 'me' ? styles.myMessage : styles.theirMessage
                         ]}
                     >
-                        <View style={[
-                            styles.bubble,
-                            msg.sender === 'me' ? styles.myBubble : (darkMode ? styles.theirBubble : styles.theirBubbleLight)
-                        ]}>
-                            <Text style={[
-                                styles.messageText,
-                                msg.sender === 'me' ? styles.myText : (darkMode ? styles.theirText : styles.textDark)
+                        <TouchableOpacity
+                            onLongPress={() => handleLongPress(msg)}
+                            activeOpacity={0.9}
+                        >
+                            <View style={[
+                                styles.bubble,
+                                msg.sender === 'me' ? styles.myBubble : (darkMode ? styles.theirBubble : styles.theirBubbleLight)
                             ]}>
-                                {msg.text}
-                            </Text>
-                            <View style={styles.msgDetails}>
-                                <Text style={[styles.timeText, msg.sender === 'me' && styles.myTimeText]}>{msg.time}</Text>
-                                {msg.sender === 'me' && (
-                                    <View style={styles.statusCheck}>
-                                        {renderStatusIcon(msg.status || 'read')}
+                                {msg.isEdited && <Text style={styles.editedTag}>Edited</Text>}
+                                <Text style={[
+                                    styles.messageText,
+                                    msg.sender === 'me' ? styles.myText : (darkMode ? styles.theirText : styles.textDark)
+                                ]}>
+                                    {msg.text}
+                                </Text>
+                                {msg.reaction && (
+                                    <View style={styles.reactionBadge}>
+                                        <Text style={styles.reactionText}>{msg.reaction}</Text>
                                     </View>
                                 )}
+                                <View style={styles.msgDetails}>
+                                    <Text style={[styles.timeText, msg.sender === 'me' && styles.myTimeText]}>{msg.time}</Text>
+                                    {msg.sender === 'me' && (
+                                        <View style={styles.statusCheck}>
+                                            {renderStatusIcon(msg.status || 'read')}
+                                        </View>
+                                    )}
+                                </View>
                             </View>
-                        </View>
+                        </TouchableOpacity>
                     </Animated.View>
                 ))}
             </ScrollView>
+
+            {/* Reminder Suggestion Popup */}
+            {reminderVisible && (
+                <Animated.View entering={SlideInDown} exiting={FadeOut} style={styles.reminderPopup}>
+                    <BlurView intensity={100} tint="dark" style={styles.reminderBlur}>
+                        <View style={styles.reminderIcon}>
+                            <Clock size={24} color="#00F2FE" />
+                        </View>
+                        <View style={styles.reminderInfo}>
+                            <Text style={styles.reminderTitle}>Set a reminder?</Text>
+                            <Text style={styles.reminderDesc}>Detected: {detectedReminder?.day} at {detectedReminder?.time}</Text>
+                        </View>
+                        <View style={styles.reminderActions}>
+                            <TouchableOpacity style={styles.remCancel} onPress={() => setReminderVisible(false)}>
+                                <X size={20} color="#FF6B6B" />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.remOk} onPress={() => { setReminderVisible(false); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }}>
+                                <Check size={20} color="#00F2FE" />
+                            </TouchableOpacity>
+                        </View>
+                    </BlurView>
+                </Animated.View>
+            )}
 
             {/* Input Area */}
             <KeyboardAvoidingView
@@ -183,12 +314,12 @@ export const GotchaChatRoom = ({
                 <BlurView intensity={darkMode ? 40 : 80} tint={darkMode ? "dark" : "light"} style={styles.inputWrapper}>
                     <View style={[styles.inputFieldContainer, !darkMode && styles.inputFieldLight]}>
                         <TouchableOpacity style={styles.inputAction}>
-                            <Plus size={22} color="#6366F1" />
+                            {isEditing ? <X size={22} color="#FF6B6B" onPress={() => { setIsEditing(false); setInputText(''); }} /> : <Plus size={22} color="#6366F1" />}
                         </TouchableOpacity>
 
                         <TextInput
                             style={[styles.input, !darkMode && styles.textDark]}
-                            placeholder="Type a message..."
+                            placeholder={isEditing ? "Editing message..." : "Type a message..."}
                             placeholderTextColor={darkMode ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"}
                             value={inputText}
                             onChangeText={setInputText}
@@ -201,9 +332,9 @@ export const GotchaChatRoom = ({
                     </View>
 
                     <View style={styles.actionRow}>
-                        {inputText.trim() ? (
-                            <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
-                                <Send size={24} color="#fff" />
+                        {(inputText.trim() || isEditing) ? (
+                            <TouchableOpacity style={[styles.sendBtn, isEditing && { backgroundColor: '#10B981' }]} onPress={handleSend}>
+                                {isEditing ? <Check size={24} color="#fff" /> : <Send size={24} color="#fff" />}
                             </TouchableOpacity>
                         ) : (
                             <View style={styles.orbWrapper}>
@@ -218,6 +349,42 @@ export const GotchaChatRoom = ({
                     </View>
                 </BlurView>
             </KeyboardAvoidingView>
+
+            {/* Message Options Modal */}
+            <Modal visible={optionsVisible} transparent animationType="fade">
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setOptionsVisible(false)}
+                >
+                    <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+
+                    <Animated.View entering={SlideInDown} style={styles.optionsContainer}>
+                        {/* Reaction Bar */}
+                        <View style={styles.reactionRow}>
+                            {REACTION_EMOJIS.map(emoji => (
+                                <TouchableOpacity key={emoji} onPress={() => handleReact(emoji)} style={styles.emojiBtn}>
+                                    <Text style={styles.emojiText}>{emoji}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Actions */}
+                        <View style={styles.actionsList}>
+                            {selectedMessage?.sender === 'me' && (
+                                <TouchableOpacity style={styles.actionItem} onPress={handleEdit}>
+                                    <Edit2 size={20} color="#fff" />
+                                    <Text style={styles.actionLabel}>Edit Message</Text>
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity style={[styles.actionItem, styles.deleteAction]} onPress={handleDelete}>
+                                <Trash2 size={20} color="#FF6B6B" />
+                                <Text style={[styles.actionLabel, { color: '#FF6B6B' }]}>Delete</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 };
@@ -231,8 +398,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8F9FA',
     },
     header: {
-        paddingTop: Platform.OS === 'ios' ? 54 : 20,
-        paddingBottom: 12,
+        paddingTop: Platform.OS === 'ios' ? 74 : 40,
+        paddingBottom: 15,
         zIndex: 10,
     },
     headerContent: {
@@ -350,6 +517,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 20,
         minWidth: 90,
+        position: 'relative',
     },
     myBubble: {
         backgroundColor: '#6366F1',
@@ -380,6 +548,27 @@ const styles = StyleSheet.create({
         color: '#fff',
         opacity: 0.95,
     },
+    editedTag: {
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.4)',
+        fontStyle: 'italic',
+        marginBottom: 2,
+    },
+    reactionBadge: {
+        position: 'absolute',
+        bottom: -15,
+        right: 10,
+        backgroundColor: '#2C2C2E',
+        borderRadius: 12,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        zIndex: 5,
+    },
+    reactionText: {
+        fontSize: 14,
+    },
     msgDetails: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -397,11 +586,59 @@ const styles = StyleSheet.create({
     statusCheck: {
         marginLeft: 2,
     },
+    reminderPopup: {
+        position: 'absolute',
+        top: height * 0.15,
+        left: 20,
+        right: 20,
+        zIndex: 100,
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: 1.5,
+        borderColor: 'rgba(0,242,254,0.3)',
+    },
+    reminderBlur: {
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    reminderIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(0,242,254,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15,
+    },
+    reminderInfo: {
+        flex: 1,
+    },
+    reminderTitle: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 16,
+    },
+    reminderDesc: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 12,
+        marginTop: 2,
+    },
+    reminderActions: {
+        flexDirection: 'row',
+        gap: 15,
+    },
+    remCancel: {
+        padding: 5,
+    },
+    remOk: {
+        padding: 5,
+    },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'flex-end',
         paddingHorizontal: 12,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+        paddingBottom: Platform.OS === 'ios' ? 74 : 16,
         paddingTop: 10,
         gap: 10,
     },
@@ -462,6 +699,53 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: '#6366F1',
         fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    optionsContainer: {
+        backgroundColor: '#1C1C1E',
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: 24,
+        paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+    },
+    reactionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 32,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        padding: 12,
+        borderRadius: 20,
+    },
+    emojiBtn: {
+        width: 44,
+        height: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emojiText: {
+        fontSize: 24,
+    },
+    actionsList: {
+        gap: 16,
+    },
+    actionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 16,
+        gap: 16,
+    },
+    actionLabel: {
+        color: '#fff',
+        fontSize: 17,
+        fontWeight: '600',
+    },
+    deleteAction: {
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
     },
     textDark: {
         color: '#1A1D23',

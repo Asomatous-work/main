@@ -7,38 +7,49 @@ const CHATS_STORAGE_KEY = '@gotcha_chats_v1';
 const SEED_CHATS = [
     {
         id: '2',
-        name: 'Design Team',
+        name: 'Deepa',
         lastMessage: 'The new mesh gradients look sick! 🔥',
         time: '10:23 AM',
         unread: 2,
         avatar: 'https://images.unsplash.com/photo-1522071823991-b59fea12f4ef?w=100&h=100&fit=crop',
         messages: [
-            { id: 'm1', text: 'Did you see the new UI?', sender: 'other', time: '10:20 AM' },
-            { id: 'm2', text: 'The new mesh gradients look sick! 🔥', sender: 'other', time: '10:23 AM' }
+            { id: 'm1', text: 'Did you see the new UI?', sender: 'other', time: '10:20 AM', timestamp: Date.now() - 1000 * 60 * 5 },
+            { id: 'm2', text: 'The new mesh gradients look sick! 🔥', sender: 'other', time: '10:23 AM', timestamp: Date.now() - 1000 * 60 * 2 }
         ]
     },
     {
         id: '3',
-        name: 'Sarah Jordan',
+        name: 'Aadarsh',
         lastMessage: 'Voice note sent (0:12)',
         time: 'Yesterday',
         unread: 0,
         isPrivate: true,
         avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
         messages: [
-            { id: 'm1', text: 'Hey, checking in on the project.', sender: 'other', time: 'Yesterday' }
+            { id: 'm1', text: 'Hey, checking in on the project.', sender: 'other', time: 'Yesterday', timestamp: Date.now() - 1000 * 60 * 60 * 24 }
         ]
     },
     {
         id: '4',
-        name: 'Alex Chen',
+        name: 'Darashanaa',
         lastMessage: 'Sure, I can meet at 5.',
         time: 'Monday',
         unread: 0,
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
         messages: [
-            { id: 'm1', text: 'Are we still on for today?', sender: 'me', time: 'Monday' },
-            { id: 'm2', text: 'Sure, I can meet at 5.', sender: 'other', time: 'Monday' }
+            { id: 'm1', text: 'Are we still on for today?', sender: 'me', time: 'Monday', timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2 },
+            { id: 'm2', text: 'Sure, I can meet at 5.', sender: 'other', time: 'Monday', timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2 }
+        ]
+    },
+    {
+        id: '5',
+        name: 'Aravind',
+        lastMessage: 'Bharat messenger is awesome 🇮🇳',
+        time: '12:00 PM',
+        unread: 0,
+        avatar: 'https://ui-avatars.com/api/?name=Aravind&background=6366F1&color=fff',
+        messages: [
+            { id: 'm1', text: 'Bharat messenger is awesome 🇮🇳', sender: 'other', time: '12:00 PM', timestamp: Date.now() }
         ]
     }
 ];
