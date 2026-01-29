@@ -13,6 +13,7 @@ import { GotchaChatList } from './src/components/GotchaChatList';
 import { GotchaChatRoom } from './src/components/GotchaChatRoom';
 import { LoginScreen } from './src/components/LoginScreen';
 import { MeshGradientBackground } from './src/components/PremiumUI';
+import { ReminderHistory } from './src/components/ReminderHistory';
 import { SettingsSheet } from './src/components/SettingsSheet';
 import { createChat, sendMessage } from './src/services/ChatService';
 import { formatDuration, getRecordingStatus, startRecording, stopRecording } from './src/services/VoiceService';
@@ -29,6 +30,7 @@ export default function App() {
     const [isRecording, setIsRecording] = useState(false);
     const [recordDuration, setRecordDuration] = useState('0:00');
     const [settingsVisible, setSettingsVisible] = useState(false);
+    const [remindersVisible, setRemindersVisible] = useState(false);
 
     // Settings State
     const [useMesh, setUseMesh] = useState(true);
@@ -147,6 +149,7 @@ export default function App() {
                                         }
                                     }}
                                     onOpenSettings={() => setSettingsVisible(true)}
+                                    onOpenReminders={() => setRemindersVisible(true)}
                                     onOpenBrainBox={() => setBrainBoxVisible(true)}
                                     darkMode={darkMode}
                                     isVaultUnlocked={isVaultUnlocked}
@@ -183,6 +186,13 @@ export default function App() {
                         onToggleVault={handleVaultToggle}
                         onLogout={handleLogout}
                     />
+
+                    <Modal visible={remindersVisible} animationType="slide">
+                        <ReminderHistory
+                            onBack={() => setRemindersVisible(false)}
+                            darkMode={darkMode}
+                        />
+                    </Modal>
                 </View>
             </GestureHandlerRootView>
         </SafeAreaProvider>

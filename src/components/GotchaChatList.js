@@ -1,7 +1,7 @@
 
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Edit3, Lock, Plus, Search, Settings, Sparkles, UserPlus, X } from 'lucide-react-native';
+import { Bell, Edit3, Lock, Plus, Search, Settings, Sparkles, UserPlus, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -36,7 +36,7 @@ const MOCK_STORIES = [
     { id: 's4', name: 'BrainBox AI', avatar: 'https://img.icons8.com/isometric/512/artificial-intelligence.png', image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800', time: 'Just now' },
 ];
 
-export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, darkMode, isVaultUnlocked }) => {
+export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, onOpenReminders, darkMode, isVaultUnlocked }) => {
     const [chats, setChats] = useState([]);
     const [search, setSearch] = useState('');
     const [contactsModalVisible, setContactsModalVisible] = useState(false);
@@ -149,6 +149,9 @@ export const GotchaChatList = ({ onSelectChat, onOpenSettings, onOpenBrainBox, d
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={[styles.iconBtn, styles.aiBtn]} onPress={onOpenBrainBox}>
                         <Sparkles size={22} color="#00F2FE" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconBtn} onPress={onOpenReminders}>
+                        <Bell size={22} color={darkMode ? "#fff" : "#000"} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.iconBtn} onPress={onOpenSettings}>
                         <Settings size={22} color={darkMode ? "#fff" : "#000"} />

@@ -10,7 +10,9 @@ import {
     Lock,
     MoreHorizontal,
     Plus,
+    Reply,
     Send,
+    Share,
     Smile,
     Trash2,
     X
@@ -31,6 +33,7 @@ import {
     View
 } from 'react-native';
 import Animated, { FadeIn, FadeOut, Layout, SlideInDown, SlideInRight } from 'react-native-reanimated';
+import { saveReminder } from '../services/ReminderService';
 import { GlowOrb } from './PremiumUI';
 
 const { width, height } = Dimensions.get('window');
@@ -56,6 +59,7 @@ export const GotchaChatRoom = ({
     const [isEditing, setIsEditing] = useState(false);
     const [reminderVisible, setReminderVisible] = useState(false);
     const [detectedReminder, setDetectedReminder] = useState(null);
+    const [replyTo, setReplyTo] = useState(null);
     const scrollRef = useRef(null);
 
     useEffect(() => {
@@ -106,11 +110,13 @@ export const GotchaChatRoom = ({
             sender: 'me',
             time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
             status: 'sent',
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            replyTo: replyTo ? { text: replyTo.text, sender: replyTo.sender } : null
         };
 
         const updatedMessages = [...messages, newMsg];
         setMessages(updatedMessages);
+        setReplyTo(null);
 
         // Trigger Reminder Check
         checkReminder(inputText);
@@ -164,6 +170,19 @@ export const GotchaChatRoom = ({
         setOptionsVisible(false);
     };
 
+    const [lastTap, setLastTap] = useState(0);
+
+    const handleDoubleTap = (msg) => {
+        const now = Date.now();
+        const DOUBLE_PRESS_DELAY = 300;
+        if (lastTap && (now - lastTap) < DOUBLE_PRESS_DELAY) {
+            addHeartReaction(msg.id);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+            setLastTap(now);
+        }
+    };
+
     const handleReact = (emoji) => {
         if (!selectedMessage) return;
         const updatedMessages = messages.map(m =>
@@ -173,6 +192,15 @@ export const GotchaChatRoom = ({
         setOptionsVisible(false);
         setSelectedMessage(null);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    };
+
+    // Helper for direct reaction from double tap
+    const addHeartReaction = (msgId) => {
+        const updatedMessages = messages.map(m =>
+            m.id === msgId ? { ...m, reaction: '❤️' } : m
+        );
+        setMessages(updatedMessages);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     };
 
     const renderStatusIcon = (status) => {
@@ -249,6 +277,7 @@ export const GotchaChatRoom = ({
                         ]}
                     >
                         <TouchableOpacity
+                            onPress={() => handleDoubleTap(msg)}
                             onLongPress={() => handleLongPress(msg)}
                             activeOpacity={0.9}
                         >
@@ -256,6 +285,12 @@ export const GotchaChatRoom = ({
                                 styles.bubble,
                                 msg.sender === 'me' ? styles.myBubble : (darkMode ? styles.theirBubble : styles.theirBubbleLight)
                             ]}>
+                                {msg.replyTo && (
+                                    <View style={styles.bubbleReplyPreview}>
+                                        <Text style={styles.replySenderName}>{msg.replyTo.sender === 'me' ? 'You' : (chat.name || 'User')}</Text>
+                                        <Text numberOfLines={1} style={styles.replyPreviewText}>{msg.replyTo.text}</Text>
+                                    </View>
+                                )}
                                 {msg.isEdited && <Text style={styles.editedTag}>Edited</Text>}
                                 <Text style={[
                                     styles.messageText,
@@ -297,7 +332,14 @@ export const GotchaChatRoom = ({
                             <TouchableOpacity style={styles.remCancel} onPress={() => setReminderVisible(false)}>
                                 <X size={20} color="#FF6B6B" />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.remOk} onPress={() => { setReminderVisible(false); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }}>
+                            <TouchableOpacity
+                                style={styles.remOk}
+                                onPress={async () => {
+                                    await saveReminder(detectedReminder);
+                                    setReminderVisible(false);
+                                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                }}
+                            >
                                 <Check size={20} color="#00F2FE" />
                             </TouchableOpacity>
                         </View>
@@ -311,7 +353,19 @@ export const GotchaChatRoom = ({
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 <BlurView intensity={darkMode ? 40 : 80} tint={darkMode ? "dark" : "light"} style={styles.inputWrapper}>
-                    <View style={[styles.inputFieldContainer, !darkMode && styles.inputFieldLight]}>
+                    {replyTo && (
+                        <Animated.View entering={SlideInRight} style={styles.replyBar}>
+                            <View style={styles.replyBarAccent} />
+                            <View style={styles.replyBarContent}>
+                                <Text style={styles.replyBarName}>{replyTo.sender === 'me' ? 'You' : (chat.name || 'User')}</Text>
+                                <Text numberOfLines={1} style={styles.replyBarText}>{replyTo.text}</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setReplyTo(null)} style={styles.closeReplyBtn}>
+                                <X size={20} color="rgba(255,255,255,0.4)" />
+                            </TouchableOpacity>
+                        </Animated.View>
+                    )}
+                    <View style={styles.inputRow}>
                         <TouchableOpacity style={styles.inputAction}>
                             {isEditing ? <X size={22} color="#FF6B6B" onPress={() => { setIsEditing(false); setInputText(''); }} /> : <Plus size={22} color="#6366F1" />}
                         </TouchableOpacity>
@@ -370,6 +424,14 @@ export const GotchaChatRoom = ({
 
                         {/* Actions */}
                         <View style={styles.actionsList}>
+                            <TouchableOpacity style={styles.actionItem} onPress={() => { setReplyTo(selectedMessage); setOptionsVisible(false); }}>
+                                <Reply size={20} color="#fff" />
+                                <Text style={styles.actionLabel}>Reply</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.actionItem} onPress={() => { Alert.alert('Forward', 'Forwarding enabled!'); setOptionsVisible(false); }}>
+                                <Share size={20} color="#fff" />
+                                <Text style={styles.actionLabel}>Forward</Text>
+                            </TouchableOpacity>
                             {selectedMessage?.sender === 'me' && (
                                 <TouchableOpacity style={styles.actionItem} onPress={handleEdit}>
                                     <Edit2 size={20} color="#fff" />
@@ -634,12 +696,65 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     inputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
+        flexDirection: 'column',
         paddingHorizontal: 12,
-        paddingBottom: Platform.OS === 'ios' ? 74 : 16,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 16,
         paddingTop: 10,
         gap: 10,
+    },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: 10,
+    },
+    replyBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 12,
+        padding: 8,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    replyBarAccent: {
+        width: 3,
+        height: '100%',
+        backgroundColor: '#6366F1',
+        borderRadius: 2,
+        marginRight: 10,
+    },
+    replyBarContent: {
+        flex: 1,
+    },
+    replyBarName: {
+        color: '#6366F1',
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    replyBarText: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 12,
+    },
+    closeReplyBtn: {
+        padding: 4,
+    },
+    bubbleReplyPreview: {
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        padding: 8,
+        borderRadius: 8,
+        borderLeftWidth: 3,
+        borderLeftColor: '#6366F1',
+        marginBottom: 8,
+    },
+    replySenderName: {
+        color: '#6366F1',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    replyPreviewText: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 11,
     },
     inputFieldContainer: {
         flex: 1,

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { decryptMessage, encryptMessage, getChatKey } from './SecurityService';
 
-const CHATS_STORAGE_KEY = '@gotcha_chats_v1';
+const CHATS_STORAGE_KEY = '@gotcha_chats_v2';
 
 // Initial Seed Data (Only encrypted on first run)
 const SEED_CHATS = [

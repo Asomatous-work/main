@@ -29,7 +29,7 @@ export const getPhoneContacts = async () => {
                         avatar: contact.imageAvailable ? contact.image.uri : null,
                         initials: (contact.name || 'Anonymous').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
                     }))
-                    .sort((a, b) => a.name.localeCompare(b.name));
+                    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             }
         }
         return [];
